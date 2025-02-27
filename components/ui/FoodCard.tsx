@@ -54,8 +54,7 @@ export default function FoodCard({ id, name, price, image_url, category, addToCa
           src={safeImageUrl}
           alt={name}
           fill
-          className="object-contain" // Changed from object-cover to object-contain
-          style={{ transform: 'scale(0.9)' }} // Zoom out by 10% to fit container
+          className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           quality={75}
           onError={() => setImageError(true)} // Switch to fallback on error
