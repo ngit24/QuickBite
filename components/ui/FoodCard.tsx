@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Image from 'next/image'; // Add this import
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { FaUtensils, FaPlus, FaMinus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
@@ -16,23 +16,17 @@ interface FoodCardProps {
 export default function FoodCard({ id, name, price, image_url, category, addToCart }: FoodCardProps) {
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
+  const [imageError, setImageError] = useState(false); // Track image load failure
 
   const handleAddToCart = () => {
-    // Animation effect for adding to cart
     setIsAdding(true);
-    
-    addToCart({ id, name, price, image_url, category }, quantity);
-    
-    // Show toast notification
+    const safeImageUrl = imageError || !image_url ? 'https://mt8848cafe.com/wp-content/uploads/2021/12/food-placeholder.jpg' : image_url;
+    addToCart({ id, name, price, image_url: safeImageUrl, category }, quantity);
     toast.success(`${quantity} ${name} added to cart!`, {
       position: "bottom-right",
       autoClose: 2000,
     });
-    
-    // Reset quantity after adding to cart
     setQuantity(1);
-    
-    // Reset animation after a short delay
     setTimeout(() => setIsAdding(false), 300);
   };
 
@@ -44,6 +38,9 @@ export default function FoodCard({ id, name, price, image_url, category, addToCa
     setQuantity(prev => Math.max(prev - 1, 1)); // Min 1 item
   };
 
+  // Fallback URL if image fails or is missing
+  const safeImageUrl = imageError || !image_url ? 'https://mt8848cafe.com/wp-content/uploads/2021/12/food-placeholder.jpg' : image_url;
+
   return (
     <motion.div 
       className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
@@ -53,22 +50,17 @@ export default function FoodCard({ id, name, price, image_url, category, addToCa
     >
       {/* Image Section */}
       <div className="relative w-full pt-[56.25%]"> {/* 16:9 aspect ratio */}
-        {image_url ? (
-          <Image
-            src={image_url}
-            alt={name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            onError={(e: any) => {
-              e.target.src = '/images/placeholder-food.png'; // Fallback image
-            }}
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
-            <FaUtensils className="text-4xl text-gray-400" />
-          </div>
-        )}
+        <Image
+          src={safeImageUrl}
+          alt={name}
+          fill
+          className="object-contain" // Changed from object-cover to object-contain
+          style={{ transform: 'scale(0.9)' }} // Zoom out by 10% to fit container
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          quality={75}
+          onError={() => setImageError(true)} // Switch to fallback on error
+          unoptimized={false} // Ensure Vercel optimization
+        />
         <div className="absolute top-2 right-2 z-10">
           <span className="px-2 py-1 bg-white/90 rounded-full text-xs font-medium text-gray-700">
             {category}
@@ -83,7 +75,7 @@ export default function FoodCard({ id, name, price, image_url, category, addToCa
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center border border-gray-300 rounded-md overflow-hidden">
             <button 
-              onClick={() => handleDecrement()}
+              onClick={handleDecrement}
               className="w-8 h-8 flex items-center justify-center bg-gray-50 hover:bg-gray-100"
               disabled={quantity <= 1}
             >
@@ -93,7 +85,7 @@ export default function FoodCard({ id, name, price, image_url, category, addToCa
               {quantity}
             </span>
             <button 
-              onClick={() => handleIncrement()}
+              onClick={handleIncrement}
               className="w-8 h-8 flex items-center justify-center bg-gray-50 hover:bg-gray-100"
               disabled={quantity >= 10}
             >
