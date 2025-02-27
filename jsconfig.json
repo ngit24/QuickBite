@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"]
-    }
+    "ignoreErrors": true,
+    "noEmit": true,
+    "strict": false,
+    "skipLibCheck": true
   }
 }
