@@ -44,7 +44,7 @@ export default function AdminDashboard() {
 
       const authHeader = `Bearer ${token}`;
       
-      const response = await fetch('http://127.0.0.1:5000/admin/dashboard', {
+      const response = await fetch('https://localhost969.pythonanywhere.com/admin/dashboard', {
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json'

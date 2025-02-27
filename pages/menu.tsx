@@ -21,7 +21,7 @@ export default function MenuPage() {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('http://127.0.0.1:5000/products/available');
+        const response = await fetch('https://localhost969.pythonanywhere.com/products/available');
         const data = await response.json();
 
         if (data.success) {

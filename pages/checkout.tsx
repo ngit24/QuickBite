@@ -27,7 +27,7 @@ export default function CheckoutPage() {
     }
 
     // Fetch timing slots
-    fetch('http://127.0.0.1:5000/utility/meal-timings')
+    fetch('https://localhost969.pythonanywhere.com/utility/meal-timings')
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -39,7 +39,7 @@ export default function CheckoutPage() {
     // Fetch user info for wallet balance
     const token = localStorage.getItem('token');
     if (token) {
-      fetch('http://127.0.0.1:5000/user', {
+      fetch('https://localhost969.pythonanywhere.com/user', {
         headers: {
           Authorization: token,
         },
@@ -115,7 +115,7 @@ export default function CheckoutPage() {
         meal_timing: mealTiming,
       };
 
-      const response = await fetch('http://127.0.0.1:5000/orders', {
+      const response = await fetch('https://localhost969.pythonanywhere.com/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
