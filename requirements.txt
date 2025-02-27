@@ -1,0 +1,7 @@
+Flask==2.0.1
+flask-cors==3.0.10
+firebase-admin==5.3.0
+PyJWT==2.3.0
+passlib==1.7.4
+python-dotenv==0.19.0
+requests==2.26.0
