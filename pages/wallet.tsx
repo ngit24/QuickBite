@@ -19,7 +19,7 @@ export default function WalletPage() {
   const fetchWalletData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://localhost969.pythonanywhere.com/user', {
+      const response = await fetch('http://127.0.0.1:5000/user', {
         headers: {
           Authorization: token || '',
         },
@@ -36,7 +36,7 @@ export default function WalletPage() {
   const fetchTransactions = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://localhost969.pythonanywhere.com/wallet/transactions', {
+      const response = await fetch('http://127.0.0.1:5000/wallet/transactions', {
         headers: {
           Authorization: token || '',
         },
@@ -66,7 +66,7 @@ export default function WalletPage() {
         return;
       }
 
-      const response = await fetch('https://localhost969.pythonanywhere.com/wallet/redeem', {
+      const response = await fetch('http://127.0.0.1:5000/wallet/redeem', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

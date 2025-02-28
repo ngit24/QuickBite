@@ -1983,5 +1983,72 @@ def update_user_profile():
             "message": f"An error occurred while updating profile: {str(e)}"
         }), 500
 
+# Add these new routes for popular and discounted products
+
+@app.route('/products/popular', methods=['GET'])
+def get_popular_products():
+    try:
+        products_ref = db.collection("products")
+        products = products_ref.stream()
+
+        # Convert to list and add dummy order count and rating data
+        product_list = []
+        for product in products:
+            product_data = product.to_dict()
+            product_data["id"] = product.id
+            # Add dummy popularity data
+            product_data["order_count"] = random.randint(50, 500)  # Simulated order count
+            product_data["rating"] = round(random.uniform(3.5, 5.0), 1)  # Simulated rating
+            product_data["rating_count"] = random.randint(10, 100)  # Simulated rating count
+            product_list.append(product_data)
+
+        # Sort by order count to get most popular
+        product_list.sort(key=lambda x: x["order_count"], reverse=True)
+
+        return jsonify({
+            "success": True,
+            "products": product_list[:8]  # Return top 8 products
+        }), 200
+
+    except Exception as e:
+        print(f"Error fetching popular products: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/products/discounted', methods=['GET'])
+def get_discounted_products():
+    try:
+        products_ref = db.collection("products")
+        products = products_ref.stream()
+
+        # Convert to list and add dummy discount data
+        product_list = []
+        for product in products:
+            product_data = product.to_dict()
+            product_data["id"] = product.id
+            # Add dummy discount and rating data
+            product_data["discount"] = random.choice([10, 15, 20, 25])  # Simulated discount
+            product_data["rating"] = round(random.uniform(3.5, 5.0), 1)
+            product_data["rating_count"] = random.randint(10, 100)
+            product_data["order_count"] = random.randint(50, 500)
+            product_list.append(product_data)
+
+        # Sort by discount percentage
+        product_list.sort(key=lambda x: x["discount"], reverse=True)
+
+        return jsonify({
+            "success": True,
+            "products": product_list[:6]  # Return top 6 discounted products
+        }), 200
+
+    except Exception as e:
+        print(f"Error fetching discounted products: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

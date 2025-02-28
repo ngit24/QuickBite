@@ -39,7 +39,7 @@ export default function FoodCard({ id, name, price, image_url, category, addToCa
   };
 
   // Fallback URL if image fails or is missing
-  const safeImageUrl = imageError || !image_url ? 'https://mt8848cafe.com/wp-content/uploads/2021/12/food-placeholder.jpg' : image_url;
+  const safeImageUrl = imageError || !image_url ? '/images/placeholder-food.png' : image_url;
 
   return (
     <motion.div 
