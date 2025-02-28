@@ -5,6 +5,7 @@ import Layout from '../components/layout/Layout';
 import AuthGuard from '../components/auth/AuthGuard';
 import { FaShoppingCart, FaArrowLeft, FaMoneyBillWave, FaWallet, FaTrashAlt, FaMinus, FaPlus, FaMapMarkerAlt, FaClock } from 'react-icons/fa';
 import { MdOutlineShoppingCartOff } from 'react-icons/md';
+import { ImageWithFallback } from '../utils/imageHelpers';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -274,16 +275,12 @@ export default function CheckoutPage() {
                 <div className="divide-y divide-gray-100">
                   {cart.map((item, index) => (
                     <div key={index} className="py-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                      {/* Mobile-optimized product layout */}
+                      {/* Updated product image */}
                       <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-50 rounded-lg overflow-hidden flex-shrink-0">
-                        <img 
-                          src={item.image_url || '/images/default-food.jpg'} 
-                          alt={item.name} 
+                        <ImageWithFallback
+                          src={item.image_url || '/images/default-food.jpg'}
+                          alt={item.name}
                           className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = '/images/default-food.jpg';
-                          }}
                         />
                       </div>
 

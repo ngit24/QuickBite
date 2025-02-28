@@ -8,6 +8,7 @@ import Layout from '../components/layout/Layout';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/router';
 import AuthGuard from '../components/auth/AuthGuard';
+import { ImageWithFallback } from '../utils/imageHelpers';
 
 // Interface definitions remain the same
 interface OrderItem {
@@ -321,14 +322,10 @@ export default function Orders() {
                         {order.items.slice(0, 3).map((item, i) => (
                           <div key={i} className="relative group">
                             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden border border-gray-200">
-                              <img 
-                                src={item.image_url || '/images/default-food.jpg'} 
+                              <ImageWithFallback
+                                src={item.image_url || '/images/default-food.jpg'}
                                 alt={item.name}
                                 className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = '/images/default-food.jpg';
-                                }}
                               />
                             </div>
                             <div className="absolute -top-1 -right-1 bg-primary-600 text-white w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-xs">
@@ -564,14 +561,10 @@ export default function Orders() {
                         {selectedOrder.items.map((item, index) => (
                           <div key={index} className="flex gap-3 bg-white p-3 rounded-lg shadow-sm">
                             <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
-                              <img
+                              <ImageWithFallback
                                 src={item.image_url || '/images/default-food.jpg'}
                                 alt={item.name}
                                 className="h-full w-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = '/images/default-food.jpg';
-                                }}
                               />
                             </div>
                             <div className="flex-1">

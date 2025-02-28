@@ -5,6 +5,7 @@ import Layout from '../components/layout/Layout';
 import AuthGuard from '../components/auth/AuthGuard';
 import { FaSearch, FaUtensils, FaShoppingCart, FaLeaf, FaStar, FaTimes, FaChevronUp, FaMinus, FaPlus } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ImageWithFallback } from '../utils/imageHelpers';
 
 export default function MenuPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -249,14 +250,10 @@ export default function MenuPage() {
                       
                       {/* Image with improved styling */}
                       <div className="absolute inset-0 flex items-center justify-center p-3">
-                        <img
+                        <ImageWithFallback
                           src={product.image_url || '/images/default-food.jpg'}
                           alt={product.name}
                           className="object-contain max-h-full max-w-full rounded-lg shadow-sm transition-transform duration-300 group-hover:scale-110"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = '/images/default-food.jpg';
-                          }}
                         />
                       </div>
                       
@@ -426,14 +423,10 @@ export default function MenuPage() {
                         >
                           {/* Item Image */}
                           <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-50 flex-shrink-0">
-                            <img 
-                              src={item.image_url || '/images/default-food.jpg'} 
+                            <ImageWithFallback
+                              src={item.image_url || '/images/default-food.jpg'}
                               alt={item.name}
                               className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = '/images/default-food.jpg';
-                              }}
                             />
                           </div>
                           
