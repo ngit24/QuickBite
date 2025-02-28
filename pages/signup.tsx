@@ -33,7 +33,7 @@ export default function Signup() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost969.pythonanywhere.com/signup', {
+      const response = await fetch('https://localhost969.pythonanywhere.com/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
