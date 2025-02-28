@@ -3,8 +3,8 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Layout from '../components/layout/Layout';
 import AuthGuard from '../components/auth/AuthGuard';
-import { FaShoppingCart, FaMapMarkerAlt, FaClock, FaChevronRight } from 'react-icons/fa';
-import { motion } from 'framer-motion';
+import { FaShoppingCart, FaMapMarkerAlt, FaClock, FaChevronRight, FaCheck } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const DELIVERY_OPTIONS = {
   PICKUP: {
@@ -30,6 +30,7 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [mealTimings, setMealTimings] = useState<any>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     // Load cart from localStorage
@@ -104,7 +105,7 @@ export default function CheckoutPage() {
         delivery_option: deliveryOption,
         classroom: classroom,
         meal_timing: mealTiming,
-        total: prices.total // Updated to use new total with GST
+        total: prices.total
       };
 
       const response = await fetch('http://127.0.0.1:5000/orders', {
@@ -119,9 +120,16 @@ export default function CheckoutPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Clear cart and redirect to order confirmation
+        // Show success message with animation
+        setShowSuccess(true);
+        
+        // Clear cart
         localStorage.removeItem('cart');
-        router.push(`/orders/${data.order_id}`);
+        
+        // Wait for animation before redirecting
+        setTimeout(() => {
+          router.push('/orders');
+        }, 2000);
       } else {
         setError(data.message || 'Failed to place order');
       }
@@ -278,6 +286,46 @@ export default function CheckoutPage() {
             </button>
           </div>
         </div>
+
+        {/* Success Message Overlay */}
+        <AnimatePresence>
+          {showSuccess && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 z-50"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl p-6 w-[90%] max-w-sm shadow-2xl"
+              >
+                <div className="text-center">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center"
+                  >
+                    <FaCheck className="text-2xl text-green-600" />
+                  </motion.div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Order Placed Successfully!
+                  </h3>
+                  <p className="text-gray-500 mb-1">
+                    Your order has been confirmed.
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    Redirecting to orders...
+                  </p>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </Layout>
     </AuthGuard>
   );
