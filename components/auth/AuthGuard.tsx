@@ -22,7 +22,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
     const verifyAuth = async () => {
       try {
-        const response = await fetch('https://localhost969.pythonanywhere.com/user', {
+        const response = await fetch('http://127.0.0.1:5000/user', {
           headers: {
             Authorization: token,
           },

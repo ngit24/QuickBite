@@ -47,7 +47,7 @@ export default function Layout({ children }: LayoutProps) {
     const token = localStorage.getItem('token');
     const fetchUserData = async () => {
       try {
-        const response = await fetch('https://localhost969.pythonanywhere.com/user', {
+        const response = await fetch('http://127.0.0.1:5000/user', {
           headers: {
             Authorization: token || '',
           },
@@ -83,7 +83,7 @@ export default function Layout({ children }: LayoutProps) {
     const checkNotifications = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('https://localhost969.pythonanywhere.com/notifications', {
+        const response = await fetch('http://127.0.0.1:5000/notifications', {
           headers: {
             Authorization: token || '',
           },
@@ -117,7 +117,7 @@ export default function Layout({ children }: LayoutProps) {
   const markNotificationAsRead = async (notificationId: string) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`https://localhost969.pythonanywhere.com/notifications/${notificationId}/read`, {
+      await fetch(`http://127.0.0.1:5000/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: {
           Authorization: token || '',

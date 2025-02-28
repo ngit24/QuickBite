@@ -25,7 +25,7 @@ export default function ManageCanteens() {
   const fetchCanteens = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://localhost969.pythonanywhere.com/admin/canteens', {
+      const response = await fetch('http://127.0.0.1:5000/admin/canteens', {
         headers: {
           Authorization: token || ''
         }
@@ -47,7 +47,7 @@ export default function ManageCanteens() {
   const handleDeleteCanteen = async (password: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://localhost969.pythonanywhere.com/admin/canteens/${selectedCanteen.email}`, {
+      const response = await fetch(`http://127.0.0.1:5000/admin/canteens/${selectedCanteen.email}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -73,7 +73,7 @@ export default function ManageCanteens() {
   const handleAddCanteen = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://localhost969.pythonanywhere.com/admin/canteens', {
+      const response = await fetch('http://127.0.0.1:5000/admin/canteens', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

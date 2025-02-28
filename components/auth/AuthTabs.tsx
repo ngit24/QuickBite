@@ -53,7 +53,7 @@ export default function AuthTabs() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('https://localhost969.pythonanywhere.com/login', {
+      const response = await fetch('http://127.0.0.1:5000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
@@ -96,7 +96,7 @@ export default function AuthTabs() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('https://localhost969.pythonanywhere.com/signup', {
+      const response = await fetch('http://127.0.0.1:5000/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -127,7 +127,7 @@ export default function AuthTabs() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('https://localhost969.pythonanywhere.com/forgot-password', {
+      const response = await fetch('http://127.0.0.1:5000/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail }),
@@ -154,7 +154,7 @@ export default function AuthTabs() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('https://localhost969.pythonanywhere.com/reset-password', {
+      const response = await fetch('http://127.0.0.1:5000/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

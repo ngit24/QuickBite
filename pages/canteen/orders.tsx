@@ -20,7 +20,7 @@ export default function CanteenOrders() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch(`https://localhost969.pythonanywhere.com/orders/canteen?status=${filterStatus}`, {
+      const response = await fetch(`http://127.0.0.1:5000/orders/canteen?status=${filterStatus}`, {
         headers: {
           Authorization: localStorage.getItem('token') || ''
         }
@@ -39,7 +39,7 @@ export default function CanteenOrders() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const response = await fetch(`https://localhost969.pythonanywhere.com/orders/${orderId}/status`, {
+      const response = await fetch(`http://127.0.0.1:5000/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

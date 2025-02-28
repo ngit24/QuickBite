@@ -70,7 +70,7 @@ export default function App({ Component, pageProps }: AppProps) {
       }
 
       try {
-        const response = await fetch('https://localhost969.pythonanywhere.com/user', {
+        const response = await fetch('http://127.0.0.1:5000/user', {
           headers: { Authorization: token }
         });
         const data = await response.json();

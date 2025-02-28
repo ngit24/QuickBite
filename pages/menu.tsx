@@ -24,7 +24,7 @@ export default function MenuPage() {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('https://localhost969.pythonanywhere.com/products/available');
+        const response = await fetch('http://127.0.0.1:5000/products/available');
         const data = await response.json();
 
         if (data.success) {
@@ -143,6 +143,7 @@ export default function MenuPage() {
     return cart.reduce((total, item) => total + item.quantity, 0);
   };
 
+  // Simplified total price calculation - remove delivery fee
   const getTotalPrice = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
@@ -473,25 +474,13 @@ export default function MenuPage() {
                     </div>
                   )}
                   
-                  {/* Mobile-friendly Cart Footer */}
+                  {/* Mobile-friendly Cart Footer - Simplified */}
                   {cart.length > 0 && (
                     <div className="p-4 border-t bg-white shadow-inner safe-bottom">
-                      {/* Subtotal */}
-                      <div className="mb-3 flex justify-between text-gray-600">
-                        <span>Subtotal</span>
-                        <span>₹{getTotalPrice().toFixed(2)}</span>
-                      </div>
-                      
-                      {/* Delivery Fee (estimated) */}
-                      <div className="mb-3 flex justify-between text-gray-600">
-                        <span>Delivery Fee</span>
-                        <span>₹20.00</span>
-                      </div>
-                      
-                      {/* Total */}
-                      <div className="mb-6 flex justify-between text-lg font-bold">
+                      {/* Total - No delivery fee */}
+                      <div className="mb-4 flex justify-between text-lg font-bold">
                         <span>Total</span>
-                        <span className="text-primary-600">₹{(getTotalPrice() + 20).toFixed(2)}</span>
+                        <span className="text-primary-600">₹{getTotalPrice().toFixed(2)}</span>
                       </div>
                       
                       {/* Mobile-optimized Action Buttons */}

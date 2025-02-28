@@ -24,7 +24,7 @@ export default function ManageUsers() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('https://localhost969.pythonanywhere.com/admin/users', {
+      const response = await fetch('http://127.0.0.1:5000/admin/users', {
         headers: {
           Authorization: token || ''
         }
@@ -57,7 +57,7 @@ export default function ManageUsers() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://localhost969.pythonanywhere.com/admin/users/${userId}/balance`, {
+      const response = await fetch(`http://127.0.0.1:5000/admin/users/${userId}/balance`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ export default function ManageUsers() {
   const handleDeleteUser = async (password: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://localhost969.pythonanywhere.com/admin/users/${selectedUser.email}/delete`, {
+      const response = await fetch(`http://127.0.0.1:5000/admin/users/${selectedUser.email}/delete`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ export default function ManageUsers() {
   const handleAddAdmin = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://localhost969.pythonanywhere.com/create-admin', {
+      const response = await fetch('http://127.0.0.1:5000/create-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

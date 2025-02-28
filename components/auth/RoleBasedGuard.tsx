@@ -27,7 +27,7 @@ export default function RoleBasedGuard({ children, allowedRoles }: RoleBasedGuar
       }
 
       try {
-        const userData = await fetchWithAuth('https://localhost969.pythonanywhere.com/user');
+        const userData = await fetchWithAuth('http://127.0.0.1:5000/user');
         
         if (allowedRoles.includes(userData.role)) {
           setIsAuthorized(true);

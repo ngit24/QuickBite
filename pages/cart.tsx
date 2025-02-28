@@ -66,7 +66,7 @@ export default function Cart() {
 
   const fetchProductDetails = async () => {
     try {
-      const response = await fetch('https://localhost969.pythonanywhere.com/get-products');
+      const response = await fetch('http://127.0.0.1:5000/get-products');
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }
@@ -83,7 +83,7 @@ export default function Cart() {
 
   const fetchDeliveryOptions = async () => {
     try {
-      const response = await fetch('https://localhost969.pythonanywhere.com/utility/delivery-locations');
+      const response = await fetch('http://127.0.0.1:5000/utility/delivery-locations');
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.locations) {
@@ -102,7 +102,7 @@ export default function Cart() {
 
   const fetchMealTimings = async () => {
     try {
-      const response = await fetch('https://localhost969.pythonanywhere.com/utility/meal-timings');
+      const response = await fetch('http://127.0.0.1:5000/utility/meal-timings');
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.timings) {
@@ -177,7 +177,7 @@ export default function Cart() {
         quantity: item.quantity
       }));
 
-      const response = await fetch('https://localhost969.pythonanywhere.com/orders', {
+      const response = await fetch('http://127.0.0.1:5000/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
