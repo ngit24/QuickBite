@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaChartBar, 
   FaStore, 
@@ -8,7 +9,8 @@ import {
   FaCog, 
   FaSignOutAlt,
   FaBars,
-  FaTimes 
+  FaTimes,
+  FaTicketAlt 
 } from 'react-icons/fa';
 
 const menuItems = [
@@ -26,6 +28,11 @@ const menuItems = [
     name: 'Canteens',
     icon: <FaStore />,
     path: '/admin/canteens'
+  },
+  {
+    name: 'Coupons',
+    icon: <FaTicketAlt />,
+    path: '/admin/coupons'
   },
   {
     name: 'Settings',

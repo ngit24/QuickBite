@@ -28,7 +28,7 @@ export default function LoadingScreen() {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.5, ease: "backOut" }}
       >
-        <span className="text-3xl font-bold text-gray-800">QuickByte</span>
+        <span className="text-3xl font-bold text-gray-800">QuickBite</span>
       </motion.div>
 
       {/* Spinning Loader with Wobble */}

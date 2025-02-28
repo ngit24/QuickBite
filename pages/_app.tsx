@@ -7,6 +7,7 @@ import '../styles/globals.css';
 import Layout from '../components/layout/Layout';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import AuthGuard from '../components/auth/AuthGuard';
+import { Toaster } from 'react-hot-toast';
 
 // Define route configurations
 const routeConfig = {
@@ -27,7 +28,8 @@ const routeConfig = {
     '/admin/dashboard',
     '/admin/canteens',
     '/admin/users',
-    '/admin/settings'
+    '/admin/settings',
+    '/admin/coupons'  // Add this line
   ],
   public: [
     '/login',
@@ -129,6 +131,7 @@ export default function App({ Component, pageProps }: AppProps) {
           pauseOnHover
           theme="light"
         />
+        <Toaster position="top-right" />
       </>
     );
   }
@@ -153,6 +156,7 @@ export default function App({ Component, pageProps }: AppProps) {
           pauseOnHover
           theme="light"
         />
+        <Toaster position="top-right" />
       </>
     );
   }
@@ -173,6 +177,7 @@ export default function App({ Component, pageProps }: AppProps) {
         pauseOnHover
         theme="light"
       />
+      <Toaster position="top-right" />
     </>
   );
 }
