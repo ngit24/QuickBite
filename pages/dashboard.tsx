@@ -42,7 +42,7 @@ export default function Dashboard() {
     const fetchUserData = async () => {
       try {
         // Fetch user details
-        const userResponse = await fetch('http://127.0.0.1:5000/user', {
+        const userResponse = await fetch('https://localhost969.pythonanywhere.com/user', {
           headers: {
             Authorization: token,
           },
@@ -56,7 +56,7 @@ export default function Dashboard() {
         setUser(userData);
 
         // Fetch recent orders
-        const ordersResponse = await fetch(`http://127.0.0.1:5000/orders/user/${userEmail}`);
+        const ordersResponse = await fetch(`https://localhost969.pythonanywhere.com/orders/user/${userEmail}`);
         
         if (!ordersResponse.ok) {
           throw new Error('Failed to fetch orders');

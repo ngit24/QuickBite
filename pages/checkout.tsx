@@ -55,7 +55,7 @@ export default function CheckoutPage() {
 
       // Fetch meal timings
       try {
-        const response = await fetch('http://127.0.0.1:5000/utility/meal-timings');
+        const response = await fetch('https://localhost969.pythonanywhere.com/utility/meal-timings');
         if (response.ok) {
           const data = await response.json();
           setTimingSlots(data.timings);
@@ -126,7 +126,7 @@ export default function CheckoutPage() {
         meal_timing: mealTiming,
       };
 
-      const response = await fetch('http://127.0.0.1:5000/orders', {
+      const response = await fetch('https://localhost969.pythonanywhere.com/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

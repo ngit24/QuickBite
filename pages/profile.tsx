@@ -31,7 +31,7 @@ export default function Profile() {
 
     const fetchUserData = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:5000/user', {
+        const response = await fetch('https://localhost969.pythonanywhere.com/user', {
           headers: {
             'Authorization': token
           }
@@ -66,7 +66,7 @@ export default function Profile() {
         return;
       }
 
-      const response = await fetch('http://127.0.0.1:5000/user/update', {
+      const response = await fetch('https://localhost969.pythonanywhere.com/user/update', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ export default function Profile() {
         return;
       }
 
-      const response = await fetch('http://127.0.0.1:5000/change-password', {
+      const response = await fetch('https://localhost969.pythonanywhere.com/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
