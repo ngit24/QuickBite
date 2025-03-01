@@ -37,7 +37,7 @@ export default function CanteenMenu() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/get-products');
+      const response = await fetch('https://localhost969.pythonanywhere.com/get-products');
       if (response.ok) {
         const data = await response.json();
         setProducts(Array.isArray(data) ? data : []);
@@ -100,8 +100,8 @@ export default function CanteenMenu() {
       }
 
       const url = editingProduct 
-        ? `http://127.0.0.1:5000/update-product/${editingProduct.id}`
-        : 'http://127.0.0.1:5000/add-product';
+        ? `https://localhost969.pythonanywhere.com/update-product/${editingProduct.id}`
+        : 'https://localhost969.pythonanywhere.com/add-product';
 
       const response = await fetch(url, {
         method: editingProduct ? 'PUT' : 'POST',
@@ -138,7 +138,7 @@ export default function CanteenMenu() {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const response = await fetch(`http://127.0.0.1:5000/delete-product/${productId}`, {
+      const response = await fetch(`https://localhost969.pythonanywhere.com/delete-product/${productId}`, {
         method: 'DELETE'
       });
       

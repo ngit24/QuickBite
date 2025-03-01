@@ -23,7 +23,7 @@ export default function AdminCouponsPage() {
 
   const fetchCoupons = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/coupons/history');
+      const response = await fetch('https://localhost969.pythonanywhere.com/coupons/history');
       const data = await response.json();
       if (data.success) {
         setCoupons(data.coupons || []);
@@ -43,7 +43,7 @@ export default function AdminCouponsPage() {
   const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://127.0.0.1:5000/coupons', {
+      const response = await fetch('https://localhost969.pythonanywhere.com/coupons', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

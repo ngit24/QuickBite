@@ -19,7 +19,7 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/forgot-password', {
+      const response = await fetch('https://localhost969.pythonanywhere.com/forgot-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/reset-password', {
+      const response = await fetch('https://localhost969.pythonanywhere.com/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

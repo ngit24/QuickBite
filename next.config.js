@@ -2,17 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    unoptimized: true, // Disable Next.js image optimization to use direct URLs
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-      {
-        protocol: 'http',
-        hostname: '**',
-      }
-    ],
     domains: [
       'i.ibb.co',
       'firebasestorage.googleapis.com',
@@ -23,8 +12,7 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
-  },
-  swcMinify: true,
+  }
 }
 
 module.exports = nextConfig

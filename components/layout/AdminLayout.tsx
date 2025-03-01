@@ -10,7 +10,7 @@ import {
   FaSignOutAlt,
   FaBars,
   FaTimes,
-  FaTicketAlt 
+  FaTicketAlt
 } from 'react-icons/fa';
 
 const menuItems = [

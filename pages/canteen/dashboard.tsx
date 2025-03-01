@@ -28,7 +28,7 @@ export default function CanteenDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/orders/canteen', {
+      const response = await fetch('https://localhost969.pythonanywhere.com/orders/canteen', {
         headers: {
           Authorization: localStorage.getItem('token') || ''
         }

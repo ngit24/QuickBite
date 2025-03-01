@@ -6,7 +6,7 @@ export const sendNotification = async (
   token: string
 ) => {
   try {
-    const response = await fetch('http://127.0.0.1:5000/notifications', {
+    const response = await fetch('https://localhost969.pythonanywhere.com/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

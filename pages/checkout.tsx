@@ -31,6 +31,9 @@ export default function CheckoutPage() {
   const [error, setError] = useState('');
   const [mealTimings, setMealTimings] = useState<any>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
 
   useEffect(() => {
     // Load cart from localStorage
@@ -42,7 +45,7 @@ export default function CheckoutPage() {
     }
 
     // Fetch meal timings
-    fetch('http://127.0.0.1:5000/utility/meal-timings')
+    fetch('https://localhost969.pythonanywhere.com/utility/meal-timings')
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -54,7 +57,11 @@ export default function CheckoutPage() {
 
   // Updated price calculations - GST inclusive
   const calculatePrices = () => {
-    const subtotalWithGST = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const subtotalWithGST = cart.reduce((total, item) => {
+      // Use the discounted price stored in cart
+      return total + (item.price * item.quantity);
+    }, 0);
+    
     const gstAmount = (subtotalWithGST * 0.18) / 1.18; // Calculate GST from inclusive price
     const subtotalBeforeGST = subtotalWithGST - gstAmount;
     const deliveryCharge = DELIVERY_OPTIONS[deliveryOption].charge;
@@ -70,6 +77,39 @@ export default function CheckoutPage() {
   };
 
   const prices = calculatePrices();
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const userEmail = localStorage.getItem('userEmail');
+      
+      const response = await fetch('https://localhost969.pythonanywhere.com/apply-coupon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify({
+          code: couponCode,
+          user_email: userEmail,
+          order_total: prices.total
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setAppliedCoupon(data.coupon);
+        setCouponError('');
+      } else {
+        setCouponError(data.message);
+      }
+    } catch (error) {
+      setCouponError('Failed to apply coupon');
+    }
+  };
 
   const handleSubmit = async () => {
     if (deliveryOption === 'CLASS' && !classroom) {
@@ -92,7 +132,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      const userResponse = await fetch('http://127.0.0.1:5000/user', {
+      const userResponse = await fetch('https://localhost969.pythonanywhere.com/user', {
         headers: {
           'Authorization': token
         }
@@ -108,7 +148,7 @@ export default function CheckoutPage() {
         total: prices.total
       };
 
-      const response = await fetch('http://127.0.0.1:5000/orders', {
+      const response = await fetch('https://localhost969.pythonanywhere.com/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -131,7 +171,7 @@ export default function CheckoutPage() {
           router.push('/orders');
         }, 2000);
       } else {
-        setError(data.message || 'Failed to place order');
+        setError(data.message || 'Insufficient balance');
       }
     } catch (err) {
       setError('An error occurred while placing your order');
@@ -144,6 +184,60 @@ export default function CheckoutPage() {
     return null; // Will redirect in useEffect
   }
 
+  const CouponSection = (
+    <div className="mt-6 border-t pt-6">
+      <h3 className="text-lg font-medium mb-3">Have a coupon?</h3>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={couponCode}
+          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+          placeholder="Enter coupon code"
+          className="flex-1 p-2 border rounded-lg"
+        />
+        <button
+          onClick={handleApplyCoupon}
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg"
+        >
+          Apply
+        </button>
+      </div>
+      {couponError && (
+        <p className="mt-2 text-sm text-red-600">{couponError}</p>
+      )}
+      {appliedCoupon && (
+        <div className="mt-2 p-2 bg-green-50 text-green-700 rounded-lg flex items-center justify-between">
+          <span>Coupon applied! Cashback: ₹{appliedCoupon.cashback}</span>
+          <button
+            onClick={() => setAppliedCoupon(null)}
+            className="text-sm underline"
+          >
+            Remove
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const CartItemDisplay = ({ item }: { item: any }) => (
+    <div className="flex justify-between py-2">
+      <div>
+        <span className="font-medium">{item.quantity}x </span>
+        {item.name}
+      </div>
+      <div className="flex items-center gap-2">
+        {item.discount > 0 && (
+          <span className="text-sm text-gray-400 line-through">
+            ₹{(item.originalPrice * item.quantity).toFixed(2)}
+          </span>
+        )}
+        <span className="font-medium">
+          ₹{(item.price * item.quantity).toFixed(2)}
+        </span>
+      </div>
+    </div>
+  );
+
   return (
     <AuthGuard>
       <Layout>
@@ -152,138 +246,136 @@ export default function CheckoutPage() {
           <meta name="description" content="Complete your order" />
         </Head>
 
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-2xl font-bold mb-6">Checkout</h1>
+        <div className="min-h-screen bg-gray-50">
+          <div className="container mx-auto px-4 lg:pl-checkout-l lg:pr-checkout-r py-8">
+            <h1 className="text-2xl font-bold mb-6">Checkout</h1>
 
-          {/* Delivery Options */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">Delivery Options</h2>
-            <div className="space-y-4">
-              {Object.values(DELIVERY_OPTIONS).map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => setDeliveryOption(option.id)}
-                  className={`w-full flex items-center justify-between p-4 rounded-lg border-2 transition-colors ${
-                    deliveryOption === option.id
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-gray-200 hover:border-primary-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {option.icon}
-                    <div className="text-left">
-                      <div className="font-medium">{option.label}</div>
-                      <div className="text-sm text-gray-500">
-                        {option.charge ? `₹${option.charge} delivery fee` : 'No delivery fee'}
-                      </div>
-                    </div>
-                  </div>
-                  <FaChevronRight className={`transition-colors ${
-                    deliveryOption === option.id ? 'text-primary-500' : 'text-gray-400'
-                  }`} />
-                </button>
-              ))}
-            </div>
-
-            {/* Classroom Input */}
-            {deliveryOption === 'CLASS' && (
-              <div className="mt-4">
-                <input
-                  type="text"
-                  placeholder="Enter your classroom number / name"
-                  value={classroom}
-                  onChange={(e) => setClassroom(e.target.value)}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Meal Timing Selection */}
-          {mealTimings && (
+            {/* Delivery Options */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4">Select Meal Timing</h2>
-              <div className="space-y-3">
-                {Object.entries(mealTimings).map(([key, timing]: [string, any]) => (
+              <h2 className="text-lg font-semibold mb-4">Delivery Options</h2>
+              <div className="space-y-4">
+                {Object.values(DELIVERY_OPTIONS).map((option) => (
                   <button
-                    key={key}
-                    onClick={() => setMealTiming(key)}
+                    key={option.id}
+                    onClick={() => setDeliveryOption(option.id)}
                     className={`w-full flex items-center justify-between p-4 rounded-lg border-2 transition-colors ${
-                      mealTiming === key
+                      deliveryOption === option.id
                         ? 'border-primary-500 bg-primary-50'
                         : 'border-gray-200 hover:border-primary-200'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <FaClock className="text-primary-500" />
+                      {option.icon}
                       <div className="text-left">
-                        <div className="font-medium">{timing.label}</div>
+                        <div className="font-medium">{option.label}</div>
                         <div className="text-sm text-gray-500">
-                          {timing.start} - {timing.end}
+                          {option.charge ? `₹${option.charge} delivery fee` : 'No delivery fee'}
                         </div>
                       </div>
                     </div>
                     <FaChevronRight className={`transition-colors ${
-                      mealTiming === key ? 'text-primary-500' : 'text-gray-400'
+                      deliveryOption === option.id ? 'text-primary-500' : 'text-gray-400'
                     }`} />
                   </button>
                 ))}
               </div>
-            </div>
-          )}
 
-          {/* Order Summary - Updated with inclusive GST */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
-            <div className="space-y-4">
-              {cart.map((item) => (
-                <div key={item.id} className="flex justify-between py-2">
-                  <div>
-                    <span className="font-medium">{item.quantity}x </span>
-                    {item.name}
-                  </div>
-                  <div>₹{(item.price * item.quantity).toFixed(2)}</div>
+              {/* Classroom Input */}
+              {deliveryOption === 'CLASS' && (
+                <div className="mt-4">
+                  <input
+                    type="text"
+                    placeholder="Enter your classroom number / name"
+                    value={classroom}
+                    onChange={(e) => setClassroom(e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500"
+                  />
                 </div>
-              ))}
-              <div className="border-t pt-4 space-y-2">
-                <div className="flex justify-between text-gray-600">
-                  <span>Price (incl. of GST)</span>
-                  <span>₹{prices.subtotalWithGST.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>Base Price</span>
-                  <span>₹{prices.subtotalBeforeGST.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>GST (18%)</span>
-                  <span>₹{prices.gstAmount.toFixed(2)}</span>
-                </div>
-                {prices.deliveryCharge > 0 && (
-                  <div className="flex justify-between mt-2 text-gray-600">
-                    <span>Delivery Fee</span>
-                    <span>₹{prices.deliveryCharge.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between mt-2 pt-2 border-t text-lg font-bold text-primary-600">
-                  <span>Total</span>
-                  <span>₹{prices.total.toFixed(2)}</span>
-                </div>
-              </div>
+              )}
             </div>
 
-            {error && (
-              <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-lg">
-                {error}
+            {/* Meal Timing Selection */}
+            {mealTimings && (
+              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 className="text-lg font-semibold mb-4">Select Meal Timing</h2>
+                <div className="space-y-3">
+                  {Object.entries(mealTimings).map(([key, timing]: [string, any]) => (
+                    <button
+                      key={key}
+                      onClick={() => setMealTiming(key)}
+                      className={`w-full flex items-center justify-between p-4 rounded-lg border-2 transition-colors ${
+                        mealTiming === key
+                          ? 'border-primary-500 bg-primary-50'
+                          : 'border-gray-200 hover:border-primary-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <FaClock className="text-primary-500" />
+                        <div className="text-left">
+                          <div className="font-medium">{timing.label}</div>
+                          <div className="text-sm text-gray-500">
+                            {timing.start} - {timing.end}
+                          </div>
+                        </div>
+                      </div>
+                      <FaChevronRight className={`transition-colors ${
+                        mealTiming === key ? 'text-primary-500' : 'text-gray-400'
+                      }`} />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
-            <button
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="w-full mt-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:bg-gray-400"
-            >
-              {isLoading ? 'Processing...' : 'Place Order'}
-            </button>
+            {/* Order Summary - Updated with inclusive GST */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+              <div className="space-y-4">
+                {cart.map((item) => (
+                  <CartItemDisplay key={item.id} item={item} />
+                ))}
+                <div className="border-t pt-4 space-y-2">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Price (incl. of GST)</span>
+                    <span>₹{prices.subtotalWithGST.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Base Price</span>
+                    <span>₹{prices.subtotalBeforeGST.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>GST (18%)</span>
+                    <span>₹{prices.gstAmount.toFixed(2)}</span>
+                  </div>
+                  {prices.deliveryCharge > 0 && (
+                    <div className="flex justify-between mt-2 text-gray-600">
+                      <span>Delivery Fee</span>
+                      <span>₹{prices.deliveryCharge.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between mt-2 pt-2 border-t text-lg font-bold text-primary-600">
+                    <span>Total</span>
+                    <span>₹{prices.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {CouponSection}
+
+              {error && (
+                <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="w-full mt-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:bg-gray-400"
+              >
+                {isLoading ? 'Processing...' : 'Place Order'}
+              </button>
+            </div>
           </div>
         </div>
 

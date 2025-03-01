@@ -78,6 +78,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        righteous: ['Righteous', 'cursive'],
       },
       boxShadow: {
         card: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
@@ -110,11 +111,19 @@ module.exports = {
         "fade-in": "fade-in 0.3s ease-in-out",
         "fade-out": "fade-out 0.3s ease-in-out",
         "slide-in": "slide-in 0.4s ease-out",
+        'float-1': 'float 3s ease-in-out infinite',
+        'float-2': 'float 3.5s ease-in-out infinite',
+        'float-3': 'float 4s ease-in-out infinite',
+        'float-4': 'float 4.5s ease-in-out infinite',
+        'float-5': 'float 5s ease-in-out infinite',
+        'float-6': 'float 5.5s ease-in-out infinite',
       },
+      padding: {
+        'dashboard-x': '1rem',  // Default padding
+        'dashboard-l': '9rem',  // Left padding for laptop
+        'checkout-l': '9rem',  // Left padding for checkout page on laptopuire("tailwindcss-animate"),
+        'checkout-r': '1rem',  // Right padding for checkout page on laptopquire('@tailwindcss/forms'),
+      }
     },
-  },
-  plugins: [
-    require("tailwindcss-animate"),
-    require('@tailwindcss/forms'),
-  ],
+  },  plugins: [    require("tailwindcss-animate"),    require('@tailwindcss/forms'),  ],
 }

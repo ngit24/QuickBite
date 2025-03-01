@@ -16,7 +16,7 @@ export default function CanteenLayout({ children }: { children: React.ReactNode 
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://127.0.0.1:5000/notifications', {
+      const response = await fetch('https://localhost969.pythonanywhere.com/notifications', {
         headers: { Authorization: token || '' }
       });
       const data = await response.json();

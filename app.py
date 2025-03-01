@@ -103,6 +103,14 @@ NOTIFICATION_TYPES = {
     'REFUND_PROCESSED': 'refund_processed'
 }
 
+# Add these constants for loyalty tiers
+LOYALTY_TIERS = {
+    'BRONZE': {'min_spent': 0, 'points_multiplier': 1},
+    'SILVER': {'min_spent': 1000, 'points_multiplier': 1.2},
+    'GOLD': {'min_spent': 5000, 'points_multiplier': 1.5},
+    'PLATINUM': {'min_spent': 10000, 'points_multiplier': 2}
+}
+
 # Add helper function for creating notifications
 def create_notification(user_email, type, message, order_id=None):
     try:
@@ -898,36 +906,39 @@ def create_order():
         if not user_email or not items:
             return jsonify({'error': 'Missing required fields'}), 400
 
-        # Fetch complete product details for each item
-        enriched_items = []
-        for item in items:
-            product_ref = db.collection('products').document(item['id'])
-            product_data = product_ref.get().to_dict()
-            enriched_items.append({
-                'id': item['id'],
-                'name': product_data.get('name', ''),
-                'price': product_data.get('price', 0),
-                'quantity': item['quantity'],
-                'image_url': product_data.get('image_url', ''),  # Include image URL
-                'category': product_data.get('category', '')
-            })
-
-        # Calculate total with delivery charge
-        subtotal = sum(item['price'] * item['quantity'] for item in enriched_items)
+        # Calculate total with discounts and delivery charge
+        subtotal = sum(
+            # Use the discounted price sent from frontend
+            item.get('price', 0) * item.get('quantity', 0) 
+            for item in items
+        )
+        
         delivery_charge = DELIVERY_LOCATIONS[delivery_option]['charge']
         total = subtotal + delivery_charge
 
-        # Check user wallet balance
+        # Fetch user's wallet balance
         user_ref = db.collection('users').document(user_email)
         user_data = user_ref.get().to_dict()
+        
         if user_data['wallet_balance'] < total:
-            return jsonify({'error': 'Insufficient balance'}), 400
+            return jsonify({
+                'success': False,
+                'message': 'Insufficient balance'
+            }), 400
 
-        # Create order with enriched items
+        # Create order with enriched items including both original and discounted prices
         order_ref = db.collection('orders').document()
         order_data = {
             'user_email': user_email,
-            'items': enriched_items,  # Use enriched items with image URLs
+            'items': [
+                {
+                    **item,
+                    'original_price': item.get('originalPrice', item.get('price', 0)),
+                    'discounted_price': item.get('price', 0),
+                    'discount_percentage': item.get('discount', 0)
+                } 
+                for item in items
+            ],
             'subtotal': subtotal,
             'delivery_charge': delivery_charge,
             'total': total,
@@ -940,16 +951,51 @@ def create_order():
             'meal_timing': meal_timing,  # Add meal timing to order data
             'timing_slot': MEAL_TIMINGS.get(meal_timing, {})  # Add timing slot information
         }
-        
+
         # Update user wallet and create order in transaction
         transaction = db.transaction()
+
         @firestore.transactional
-        def create_order_transaction(transaction, user_ref, order_ref, order_data, user_data):
-            new_balance = user_data['wallet_balance'] - total
+        def create_order_transaction(transaction, user_ref, order_ref, order_data, current_balance):
+            new_balance = current_balance - total
             transaction.update(user_ref, {'wallet_balance': new_balance})
             transaction.set(order_ref, order_data)
-            
-        create_order_transaction(transaction, user_ref, order_ref, order_data, user_data)
+
+        create_order_transaction(
+            transaction, 
+            user_ref, 
+            order_ref, 
+            order_data, 
+            user_data['wallet_balance']
+        )
+
+        # Handle coupon if applied
+        coupon_data = data.get('coupon')
+        if coupon_data:
+            try:
+                # Add cashback to user's wallet
+                current_balance = user_data.get('wallet_balance', 0) - total  # Subtract order total first
+                new_balance = current_balance + coupon_data['cashback']
+                
+                # Update wallet balance
+                user_ref.update({
+                    'wallet_balance': new_balance
+                })
+                
+                # Create cashback transaction record
+                transaction_ref = db.collection('transactions').document()
+                transaction_ref.set({
+                    'user_email': user_email,
+                    'type': 'CASHBACK',
+                    'amount': coupon_data['cashback'],
+                    'description': f'Cashback from coupon {coupon_data["code"]}',
+                    'order_id': order_ref.id,
+                    'timestamp': firestore.SERVER_TIMESTAMP
+                })
+
+            except Exception as e:
+                print(f"Error processing coupon cashback: {str(e)}")
+                # Continue with order creation even if cashback fails
 
         return jsonify({
             'success': True,
@@ -958,7 +1004,11 @@ def create_order():
         }), 201
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error creating order: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
 
 @app.route('/orders/<order_id>/status', methods=['PUT'])
 def update_order_status(order_id):
@@ -1985,70 +2035,410 @@ def update_user_profile():
 
 # Add these new routes for popular and discounted products
 
+def calculate_product_metrics():
+    """Calculate real metrics for all products based on order history"""
+    try:
+        products_metrics = {}
+        orders = db.collection('orders').stream()
+        
+        for order in orders:
+            order_data = order.to_dict()
+            # Skip cancelled orders
+            if order_data.get('status') == 'cancelled':
+                continue
+                
+            # Process each item in order
+            for item in order_data.get('items', []):
+                product_id = item.get('id')
+                if not product_id:
+                    continue
+                    
+                if product_id not in products_metrics:
+                    products_metrics[product_id] = {
+                        'total_orders': 0,
+                        'total_quantity': 0,
+                        'ratings': [],
+                        'last_month_orders': 0
+                    }
+                
+                # Update metrics
+                products_metrics[product_id]['total_orders'] += 1
+                products_metrics[product_id]['total_quantity'] += item.get('quantity', 0)
+                
+                # Check if order is from last month
+                order_date = order_data.get('created_at')
+                if order_date:
+                    if isinstance(order_date, str):
+                        order_date = datetime.fromisoformat(order_date.replace('Z', '+00:00'))
+                    one_month_ago = datetime.now(pytz.UTC) - timedelta(days=30)
+                    if order_date > one_month_ago:
+                        products_metrics[product_id]['last_month_orders'] += item.get('quantity', 0)
+                
+        return products_metrics
+    except Exception as e:
+        print(f"Error calculating product metrics: {str(e)}")
+        return {}
+
+# Replace the existing popular products endpoint
 @app.route('/products/popular', methods=['GET'])
 def get_popular_products():
     try:
         products_ref = db.collection("products")
         products = products_ref.stream()
-
-        # Convert to list and add dummy order count and rating data
+        metrics = calculate_product_metrics()
+        
+        # Convert to list and add real data
         product_list = []
         for product in products:
             product_data = product.to_dict()
             product_data["id"] = product.id
-            # Add dummy popularity data
-            product_data["order_count"] = random.randint(50, 500)  # Simulated order count
-            product_data["rating"] = round(random.uniform(3.5, 5.0), 1)  # Simulated rating
-            product_data["rating_count"] = random.randint(10, 100)  # Simulated rating count
+            
+            # Add real metrics
+            product_metrics = metrics.get(product.id, {})
+            product_data["order_count"] = product_metrics.get('last_month_orders', 0)
+            product_data["rating"] = 4.5  # Default rating
             product_list.append(product_data)
 
-        # Sort by order count to get most popular
+        # Sort by actual order count and get top 3 most ordered
         product_list.sort(key=lambda x: x["order_count"], reverse=True)
+        top_three = product_list[:3]
+        
+        # Add badges based on position
+        badges = ["Most Popular", "Customer Favorite", "Top Rated"]
+        for i, product in enumerate(top_three):
+            product["badge"] = badges[i]
 
         return jsonify({
             "success": True,
-            "products": product_list[:8]  # Return top 8 products
+            "products": top_three
         }), 200
 
     except Exception as e:
         print(f"Error fetching popular products: {str(e)}")
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+        return jsonify({"success": False, "error": str(e)}), 500
 
+# Replace the existing discounted products endpoint
 @app.route('/products/discounted', methods=['GET'])
 def get_discounted_products():
     try:
         products_ref = db.collection("products")
         products = products_ref.stream()
-
-        # Convert to list and add dummy discount data
+        metrics = calculate_product_metrics()
+        
         product_list = []
         for product in products:
             product_data = product.to_dict()
             product_data["id"] = product.id
-            # Add dummy discount and rating data
-            product_data["discount"] = random.choice([10, 15, 20, 25])  # Simulated discount
-            product_data["rating"] = round(random.uniform(3.5, 5.0), 1)
-            product_data["rating_count"] = random.randint(10, 100)
-            product_data["order_count"] = random.randint(50, 500)
+            
+            # Get real metrics
+            product_metrics = metrics.get(product.id, {})
+            monthly_orders = product_metrics.get('last_month_orders', 0)
+            product_data["order_count"] = monthly_orders
             product_list.append(product_data)
 
-        # Sort by discount percentage
-        product_list.sort(key=lambda x: x["discount"], reverse=True)
+        # Sort by order count ascending (least ordered first)
+        product_list.sort(key=lambda x: x["order_count"])
+        
+        # Get top 3 least ordered and assign specific discounts
+        least_ordered = product_list[:3]
+        discounts = [30, 25, 20]  # Highest discount for least ordered
+        
+        # Apply specific discounts and labels
+        for i, product in enumerate(least_ordered):
+            product["discount"] = discounts[i]
+            product["discount_label"] = f"Special {discounts[i]}% Off"
 
         return jsonify({
             "success": True,
-            "products": product_list[:6]  # Return top 6 discounted products
+            "products": least_ordered
         }), 200
 
     except Exception as e:
         print(f"Error fetching discounted products: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# Add new route to get product ratings
+@app.route('/products/<product_id>/rating', methods=['POST'])
+def rate_product(product_id):
+    try:
+        data = request.json
+        rating = data.get('rating')
+        user_email = data.get('user_email')
+        
+        if not rating or not user_email:
+            return jsonify({
+                "success": False,
+                "message": "Rating and user email are required"
+            }), 400
+            
+        # Store rating in new ratings collection
+        rating_ref = db.collection('product_ratings').document()
+        rating_ref.set({
+            'product_id': product_id,
+            'user_email': user_email,
+            'rating': rating,
+            'created_at': firestore.SERVER_TIMESTAMP
+        })
+        
+        return jsonify({
+            "success": True,
+            "message": "Rating submitted successfully"
+        }), 200
+        
+    except Exception as e:
+        print(f"Error submitting rating: {str(e)}")
         return jsonify({
             "success": False,
-            "error": str(e)
+            "error": str(e)}
+        ), 500
+
+@app.route('/apply-coupon', methods=['POST'])
+def apply_coupon():
+    try:
+        data = request.json
+        code = data.get('code')
+        user_email = data.get('user_email')
+        order_total = float(data.get('order_total', 0))
+
+        # Define coupon rules
+        coupons = {
+            'WELCOME': {
+                'min_order': 200,
+                'cashback': 100,
+                'new_user_only': True
+            },
+            'MEGA50': {
+                'min_order': 150,
+                'cashback': 50,
+                'new_user_only': False
+            },
+            'LUNCH25': {
+                'min_order': 100,
+                'cashback': 25,
+                'new_user_only': False
+            }
+        }
+
+        if code not in coupons:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid coupon code'
+            }), 400
+
+        coupon = coupons[code]
+
+        # Check minimum order amount
+        if order_total < coupon['min_order']:
+            return jsonify({
+                'success': False,
+                'message': f'Minimum order amount of ₹{coupon["min_order"]} required'
+            }), 400
+
+        # Check if new user only
+        if coupon['new_user_only']:
+            user_ref = db.collection('users').document(user_email)
+            user_data = user_ref.get().to_dict()
+            orders = db.collection('orders').where('user_email', '==', user_email).limit(1).stream()
+            
+            if len(list(orders)) > 0:
+                return jsonify({
+                    'success': False,
+                    'message': 'This coupon is for new users only'
+                }), 400
+
+        return jsonify({
+            'success': True,
+            'coupon': {
+                'code': code,
+                'cashback': coupon['cashback']
+            }
+        }), 200
+
+    except Exception as e:
+        print(f"Error applying coupon: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to apply coupon'
         }), 500
+
+@app.route('/user/favorites', methods=['GET', 'POST'])
+def handle_favorites():
+    try:
+        token = request.headers.get("Authorization")
+        if not token:
+            return jsonify({"error": "Token required"}), 401
+
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        user_email = decoded.get("email")
+
+        if request.method == 'GET':
+            # Get user's favorites
+            user_ref = db.collection('users').document(user_email)
+            user_data = user_ref.get().to_dict()
+            favorites = user_data.get('favorites', [])
+            
+            # Get favorite products details
+            favorite_products = []
+            for product_id in favorites:
+                product_ref = db.collection('products').document(product_id)
+                product = product_ref.get()
+                if product.exists:
+                    product_data = product.to_dict()
+                    product_data['id'] = product.id
+                    favorite_products.append(product_data)
+
+            return jsonify({
+                'success': True,
+                'favorites': favorite_products
+            }), 200
+
+        else:  # POST
+            data = request.json
+            product_id = data.get('product_id')
+            
+            user_ref = db.collection('users').document(user_email)
+            user_data = user_ref.get().to_dict()
+            favorites = set(user_data.get('favorites', []))
+
+            if product_id in favorites:
+                favorites.remove(product_id)
+            else:
+                favorites.add(product_id)
+
+            user_ref.update({
+                'favorites': list(favorites)
+            })
+
+            return jsonify({
+                'success': True,
+                'favorites': list(favorites)
+            }), 200
+
+    except Exception as e:
+        print(f"Error handling favorites: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/user/loyalty', methods=['GET'])
+def get_loyalty_status():
+    try:
+        token = request.headers.get("Authorization")
+        if not token:
+            return jsonify({"error": "Token required"}), 401
+
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        user_email = decoded.get("email")
+
+        # Get user's total spent
+        orders = db.collection('orders')\
+            .where('user_email', '==', user_email)\
+            .where('status', '==', 'completed')\
+            .stream()
+
+        total_spent = sum(order.to_dict().get('total', 0) for order in orders)
+        
+        # Calculate points (1 point per 10 rupees spent)
+        points = int(total_spent * 0.1)  # 10% of spent amount as points
+        
+        # Determine tier
+        tier = 'BRONZE'
+        for t, requirements in LOYALTY_TIERS.items():
+            if total_spent >= requirements['min_spent']:
+                tier = t
+
+        # Get available rewards
+        rewards = []
+        if points >= 100:
+            rewards.append({
+                'id': 'REWARD100',
+                'description': '₹100 Cashback',
+                'points_required': 100,
+                'type': 'cashback',
+                'value': 100
+            })
+        if points >= 500:
+            rewards.append({
+                'id': 'REWARD500',
+                'description': '₹500 Cashback',
+                'points_required': 500,
+                'type': 'cashback',
+                'value': 500
+            })
+
+        return jsonify({
+            'success': True,
+            'loyalty_status': {
+                'tier': tier,
+                'points': points,
+                'total_spent': total_spent,
+                'available_rewards': rewards,
+                'next_tier': next(
+                    (t for t, r in LOYALTY_TIERS.items() 
+                     if r['min_spent'] > total_spent),
+                    None
+                )
+            }
+        }), 200
+
+    except Exception as e:
+        print(f"Error getting loyalty status: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/user/redeem-points', methods=['POST'])
+def redeem_loyalty_points():
+    try:
+        token = request.headers.get("Authorization")
+        if not token:
+            return jsonify({"error": "Token required"}), 401
+
+        data = request.json
+        reward_id = data.get('reward_id')
+        
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        user_email = decoded.get("email")
+
+        # Verify points and apply reward
+        user_ref = db.collection('users').document(user_email)
+        loyalty_status = get_loyalty_status().get_json()
+        
+        if not loyalty_status.get('success'):
+            return jsonify({'error': 'Could not verify points'}), 400
+
+        points = loyalty_status['loyalty_status']['points']
+        
+        # Define rewards and their costs
+        rewards = {
+            'REWARD100': {'points': 100, 'value': 100},
+            'REWARD500': {'points': 500, 'value': 500}
+        }
+
+        if reward_id not in rewards:
+            return jsonify({'error': 'Invalid reward'}), 400
+
+        reward = rewards[reward_id]
+        if points < reward['points']:
+            return jsonify({'error': 'Insufficient points'}), 400
+
+        # Update user's wallet
+        transaction = db.transaction()
+        @firestore.transactional
+        def update_wallet_in_transaction(transaction, user_ref):
+            user = user_ref.get(transaction=transaction)
+            current_balance = user.get('wallet_balance', 0)
+            transaction.update(user_ref, {
+                'wallet_balance': current_balance + reward['value'],
+                'points_redeemed': firestore.Increment(reward['points'])
+            })
+
+        update_wallet_in_transaction(transaction, user_ref)
+
+        return jsonify({
+            'success': True,
+            'message': f'Successfully redeemed {reward["points"]} points for ₹{reward["value"]} cashback'
+        }), 200
+
+    except Exception as e:
+        print(f"Error redeeming points: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
